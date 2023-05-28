@@ -1,0 +1,1 @@
+[{"id":"502f36c8-b4ea-46ef-aebc-aa509b55e1ba","api_name":"iranScape","api_address":"https://iranescape.com/Checkout/O$scapeRoom$/sans?day=$DAY$","request_method":"post-method"},{"id":"ed1247a5-c42b-4744-b1ee-001a89cdf901","api_name":"t4f","api_address":"https://www.t4f.ir/fun/$scapRoom$/checkout/day_data?fun_id=$scapRoom$&date_id=$day$","request_method":"get-method"}]

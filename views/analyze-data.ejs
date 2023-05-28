@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <%- include('./template/head'); %>
+</head>
+
+<body>
+    <%- include('./template/loader'); %>
+
+    <div class="container-fluid min-vh-50 center">
+        <div class="row center w-100 py-4">
+
+            <div class="col-4 py-5">
+                <select onchange="scapeRoomChange()" class="form-control" name="scapeRoom-changed">
+                    <option selected value="0">All Data</option>
+                    <% if(scapeRooms.length > 0) { %>
+                        <% scapeRooms.forEach( s => { %>
+                            <option value="<%= s?.scapeRoomId %>"><%= s?.name %> (<%= s?.scapeRoomId %>)</option>
+                        <% }) %>
+                    <% } %>
+                </select>
+            </div>
+            <div class="col-4">
+                <input id="date-input" type="date" class="form-control" onchange="dateChange()">
+            </div>
+
+            <div class="col-4 py-5">
+                <select onchange="apiNameChange()" class="form-control" name="apiName-changed">
+                    <option selected value="all">All APIs</option>
+                    <% if(apis.length > 0) { %>
+                        <% apis.forEach( a => { %>
+                            <option value="<%= a?.api_name %>"> <%= a?.api_name %></option>
+                        <% }) %>
+                    <% } %>
+                </select>
+            </div>
+            <h3  class="py-3">
+                Sold Out Escape Rooms = 
+                <% if(soldScapeRoom > 0) { %>
+                   <span class="text-weight-bold" id="soldScapeRoom"> <%= soldScapeRoom %> </span>
+                <% } %>
+            </h3>
+
+            <div class="col-12 center table-col">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th scope="col">ID EscapeRoom</th>
+                            <th scope="col">EscapeRoom Name</th>
+                            <th scope="col">Price</th>
+                            <th scope="col">Status</th>
+                            <th scope="col">API Name</th>
+                            <th scope="col">Start Time</th>
+                            <th scope="col">Date</th>
+                            <th scope="col">Date In Persian</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-append" >
+
+                        <% if(results.length > 0) { %>
+
+                            <script>
+                                var results = '<%- JSON.stringify(results) %>'
+                            </script>
+
+                            <% results.forEach( r => { %>
+                                <tr>
+                                    <td><%= r?.IdEscapeRoom %></td>
+                                    <td><%= r?.name %></td>
+                                    <td><%= r?.price %></td>
+                                    <td><%= r?.status %></td>
+                                    <td><%= r?.apiName %></td>
+                                    <td><%= r?.startTime %></td>
+                                    <td><%= r?.date.split('T')[0] %></td>
+                                    <td><%= r?.dateInPersian %></td>
+                                </tr>
+                            <% }) %>
+                        <% }else{ %>
+                            <tr>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td>No Data</td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                            </tr>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="container-fluid">
+                <div class="row center my-5">
+                    <% if(results.length > 0){ %>
+                        <button id="get-excel" onclick="getExcelFile()" class="btn btn-success">get Excel</button>  
+                    <% } %>
+                </div>
+                <div class="row center">
+                    <a class="pt-3" href="/">back</a>
+                </div>
+                
+            </div>
+
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.1.2/dist/axios.min.js"></script>
+
+    <script>
+
+        let dataAnalyze = [];    
+        let dataAnalyze2 = [];  
+
+        let customize_data = {
+            date: 'all',
+            scapeRoom: 0,
+            APIName: 'all'
+        }
+
+        const dateChange = () => {
+
+            document.getElementById('container-loader').style.display = 'flex';
+
+            var date = new Date($('#date-input').val());
+            var day = date.getDate();
+            var month = date.getMonth() + 1;
+            var year = date.getFullYear();
+            if(year && month && day){
+                customize_data.date = [year, month, day].join('-');
+            }else{
+                customize_data.date = 'all';
+            }
+
+            customizeData();
+        }
+        
+        const scapeRoomChange = () => {
+
+            document.getElementById('container-loader').style.display = 'flex';
+
+            let scapeRoom = document.querySelector('select[name="scapeRoom-changed"]')?.value;
+            customize_data.scapeRoom = parseInt(scapeRoom);
+
+            customizeData();
+        }
+        
+        const apiNameChange = () => {
+
+            document.getElementById('container-loader').style.display = 'flex';
+
+            let api_name = document.querySelector('select[name="apiName-changed"]')?.value;
+            customize_data.APIName = api_name;
+            customizeData();
+        }
+
+        const customizeData = () => {
+
+            axios.post('/data', {
+                customize_data
+            })
+            .then((response) => {
+
+                if (!response.data.result) {
+                    document.getElementById('container-loader').style.display = 'none';
+                    alert("Error in Backend!")
+                    window.location.href = `/data`;
+                }
+                $('#soldScapeRoom').html(response.data.soldScapeRoom)
+                $('#table-append').html('');
+
+                dataAnalyze2 = response.data.data
+                appendTable(response.data.data)
+
+            }).catch((e) => {
+                    alert(e);
+                    window.location.href = '/data';
+
+            })
+        }
+
+        const appendTable = (data) => {
+
+            let str = '';
+
+            if(!data || data.length < 1){
+                str += `
+                    <tr>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td>No Data</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                `;
+                document.getElementById('get-excel').disabled = true;
+            }else{
+                document.getElementById('get-excel').disabled = false;
+
+                data.forEach(s => {
+                    str += `
+                        <tr>
+                            <td>${ s?.IdEscapeRoom }</td>
+                            <td>${ s?.name }</td>
+                            <td>${ s?.price }</td>
+                            <td>${ s?.status }</td>
+                            <td>${ s?.apiName }</td>
+                            <td>${ s?.startTime }</td>
+                            <td>${ s?.date.split('T')[0] }</td>
+                            <td>${ s?.dateInPersian }</td>
+                        </tr>
+                    `;
+                });
+            }
+
+            document.getElementById('container-loader').style.display = 'none';
+            $('#table-append').append(str);
+        }
+
+        const getExcelFile = () => {
+
+            document.getElementById('container-loader').style.display = 'flex';
+
+            if(dataAnalyze2.length < 1){
+                if(typeof results !== "string"){
+                    dataAnalyze = JSON.stringify(results);
+                }else{
+                    dataAnalyze = results
+                }
+            }else{
+                dataAnalyze = JSON.stringify(dataAnalyze2)
+            }
+
+            axios.post('/data/create-excel-file', {
+                dataAnalyze
+            })
+            .then(function (response) {
+                document.getElementById('container-loader').style.display = 'none';
+                window.location.href = `/data/download/${response.data.filename}`;
+            })
+            .catch(function (error) {
+                document.getElementById('container-loader').style.display = 'none';
+                alert(error);
+                window.location.href = `/data`;
+
+            })            
+        }
+   </script>
+
+</body>
+
+</html>

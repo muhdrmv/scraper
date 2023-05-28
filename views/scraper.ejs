@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+     <%- include('./template/head'); %>
+</head>
+
+<body>
+    <%- include('./template/loader'); %>
+
+     <div class="container min-vh-100 center">
+          <div class="row center w-100">
+
+               <div class="col-10">
+                    <h2 class="text-center">Choose one of the API </h2>
+                    <form>
+                         <select onchange="apiChoosed()" name="api-address-method" class="custom-select mt-4">
+                              <option selected value="0">Open this select menu</option>
+                              <% if(data.length > 0) { %>
+                              <% data.forEach( d => { %>
+                              <option value="<%= d?.api_address %>,,,<%= d?.request_method %>,,,<%= d?.api_name %>"><%= d?.api_name %> : (
+                                   <%= d?.api_address %> )</option>
+                              <% }) %>
+                              <% } %>
+                         </select>
+
+                         <div class="mt-5" id="append-parameter">
+
+                         </div>
+                    </form>
+               </div>
+
+               <div class="col-4 center center-text mt-5">
+                    <form id="submit-scrap">
+                         <input type="submit" class="btn btn-primary w-100" value="Submit">
+                    </form>
+                    <a class="pt-3" href="/">back</a>
+               </div>
+
+          </div>
+     </div>
+
+
+     <script src="https://cdn.jsdelivr.net/npm/axios@1.1.2/dist/axios.min.js"></script>
+
+     <script>
+          let scraper_data = {
+               request_method: "",
+               ip_address: "",
+               api_name:"",
+               parameters: [],
+               results: []
+          }
+
+          document.querySelector("#submit-scrap").addEventListener('submit', function (e) {
+
+               e.preventDefault();
+               document.getElementById('container-loader').style.display = 'flex';
+
+               scraper_data?.parameters.forEach(p => {
+
+                    p = p.replace(/\$/g, '')
+
+                    let new_object = {
+                         parameter: p,
+                         min: parseInt(document.querySelector(`input[name="min-${p}"]`)?.value) ? parseInt(document.querySelector(`input[name="min-${p}"]`)?.value) : 0,
+                         max: parseInt(document.querySelector(`input[name="max-${p}"]`)?.value) ? parseInt(document.querySelector(`input[name="max-${p}"]`)?.value) : 0
+                    }
+                    scraper_data?.results.push(new_object)
+               });
+
+               axios.post('/scraper/generate', {
+                    scraper_data
+               })
+               .then((response) => {
+                    document.getElementById('container-loader').style.display = 'none';
+                    console.log(response);
+                    if (!response.data.result) {
+                         alert(response.data.msg);
+                    }else{
+                         alert('The Data insert in Database , go to the Data Analyze page And check the log for those api that has error');
+                    }
+                    window.location.href = `/scraper`;
+               }).catch((e) => {
+                    alert(e);
+                    window.location.href = '/scraper';
+               })
+          });
+
+          const apiChoosed = async () => {
+
+               $('#append-parameter').html('');
+
+               let api_address_method = document.querySelector('select[name="api-address-method"]')?.value;
+               let array_split = api_address_method.split(",,,"); 
+               let ip_address = array_split[0];
+               let request_method = array_split[1];
+               scraper_data.ip_address = ip_address;
+               scraper_data.request_method = request_method;
+               scraper_data.api_name =  array_split[2]
+               scraper_data.results = []
+               const regex = /\$(.*?)\$/g;
+               const matches = ip_address.match(regex);
+               const cleanedMatches = matches.map(match => match.replace(/\$/g, ''));
+               scraper_data.parameters = matches.filter((item,index) => matches.indexOf(item) === index);
+               
+               let createInput = cleanedMatches.filter((item,index) => cleanedMatches.indexOf(item) === index);
+
+               let str = '';
+
+               createInput.forEach(element => {
+                    str += `
+                    <div class="center mt-4">
+                        <h3 class="pr-3 pt-2">${element}:</h3> min: <input type="number" class="form-control mr-3" required name="min-${element}" id="min-${element}">  max: <input type="number" class="form-control mr-3" required name="max-${element}" id="max-${element}"> 
+                    </div>
+                `;
+               });
+
+               $('#append-parameter').append(str);
+
+          }
+     </script>
+</body>
+
+</html>

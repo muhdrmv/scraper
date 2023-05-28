@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+     <%- include('./template/head'); %>
+</head>
+
+<body>
+    <%- include('./template/loader'); %>
+
+     <div class="container min-vh-100 center">
+          <div class="row center w-100">
+               
+               <div class="col-10">
+                    <form>
+                         <div class="form-group custom-form">
+                              <input type="text" class="form-control" required name="api-name" id="api-name" placeholder="Enter Your API name ">
+                              <label for="api-name" class="active">API Name</label>
+                         </div>
+
+                         <div class="form-group custom-form mt-5">
+                              <input type="text" class="form-control" required name="api-address" id="api-address" placeholder="Enter Your API with parameter, show the parameter between '$':  ( 'https://website/url/O$ROOM$/$AGE$' ) ">
+                              <label for="api-address" class="active">URL</label>
+                         </div>
+                    </form>
+               </div>
+
+               <div class="col-10 mt-3" id="marvi">
+                    <label for="marvi" class="">Choose HTTP request method:</label>
+                    <div class="d-flex justify-content-center align-items-center">
+                         <div class="custom-control custom-radio">
+                              <input type="radio" id="post-method" checked required name="request-method" value="post-method" class="form-check-input">
+                              <label class="form-check-label" for="post-method">POST</label>
+                         </div>
+                         <div class="custom-control custom-radio">
+                              <input type="radio" id="get-method" required name="request-method" value="get-method" class="form-check-input">
+                              <label class="form-check-label" for="get-method">GET</label>
+                         </div>
+                    </div>
+               </div>
+
+               <div class="col-4 center center-text mt-5">
+                    <form id="submit-api">
+                         <input type="submit" class="btn btn-primary w-100" value="Submit">
+                    </form>
+                    <a class="pt-3" href="/">back</a>
+               </div>
+
+          </div>
+     </div>
+
+     <div class="container-fluid min-vh-50 center">
+          <div class="row center w-100 py-4">
+               <div class="col-12 center table-col">
+                    <table class="table table-striped">
+                         <thead>
+                           <tr>
+                              <th scope="col">Name</th>
+                              <th scope="col">URL</th>
+                              <th scope="col">Method</th>
+                              <th class="text-center" scope="col">Action</th>
+                           </tr>
+                         </thead>
+                         <tbody id="table-append">
+                              <% if(data.length > 0) { %>
+                                   <% data.forEach( d => { %> 
+                                        <tr>
+                                             <td><%= d?.api_name %></td>
+                                             <td><%= d?.api_address %></td>
+                                             <td><%= d?.request_method %></td>
+                                             <td class="btn w-100" onclick="deleteURL('<%= d.id %>')"><img src="../images/delete.png"/></td>
+                                        </tr>
+                                   <% }) %> 
+                              <% }else{ %>
+                                   <tr>
+                                        <td></td>
+                                        <td></td>
+                                        <td>No Data</td>
+                                        <td></td>
+                                   </tr>
+                              <% } %>
+                         </tbody>
+                       </table>
+               </div>
+          </div>
+     </div>
+
+     <script src="https://cdn.jsdelivr.net/npm/axios@1.1.2/dist/axios.min.js"></script>
+
+     <script>
+          document.querySelector("#submit-api").addEventListener('submit', function(e) {
+
+               e.preventDefault();
+               document.getElementById('container-loader').style.display = 'flex';
+
+               let api_name = document.querySelector('input[name="api-name"]')?.value;
+               let api_address = document.querySelector('input[name="api-address"]')?.value;
+               let request_method = document.querySelector('input[name="request-method"]:checked')?.value;
+
+               axios.post('/url',{
+                    api_name,
+                    api_address,
+                    request_method
+               })
+               .then((response)=>{ 
+                    document.getElementById('container-loader').style.display = 'none';
+
+                    if(!response.data.result){
+                         alert(response.data.msg);
+                         return;
+                    }
+                    window.location.href = `/url`;
+
+               }).catch( (e) => {
+                    alert(e);
+                    window.location.href = '/url';
+               })
+          });
+          
+          const deleteURL = (id) => {
+
+               document.getElementById('container-loader').style.display = 'flex';
+
+               axios.post('/url/delete',{
+                    id
+               })
+               .then((response)=>{ 
+                    document.getElementById('container-loader').style.display = 'none';
+
+                    if(!response.data.result){
+                         alert(response.data.msg);
+                         return;
+                    }
+                    window.location.href = `/url`;
+               }).catch( (e) => {
+                    alert(e);
+                    window.location.href = '/url';
+               })
+          }
+     </script>
+</body>
+</html>
